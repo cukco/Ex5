@@ -1,34 +1,28 @@
-delete from employees;
+select s.full_name as "Tên sinh viên",c.course_name as "Môn học",
+       e.score as "Điểm" from enrollments e
+inner join students s on s.student_id = e.student_id
+inner join courses c on e.course_id = c.course_id;
 
-delete from employees
-where id not in (
-    select min(id) from employees
-    group by full_name,department,position
+select s.full_name as "Tên sinh viên",avg(score) as "Điểm trung bình",
+       max(score) as "Điểm cao nhất",
+       min(score) as "Điểm thấp nhất" from enrollments e
+inner join students s on s.student_id = e.student_id
+inner join courses c on e.course_id = c.course_id
+group by e.student_id,s.full_name;
+
+select c.course_name, avg(score) from courses c
+inner join enrollments e on c.course_id = e.course_id
+group by c.course_name
+having avg(score) > 7.5;
+
+select full_name,course_name,credit,score from enrollments
+inner join students on enrollments.student_id = students.student_id
+inner join courses on enrollments.course_id = courses.course_id;
+
+select full_name from students
+inner join enrollments on students.student_id = enrollments.student_id
+group by full_name, enrollments.student_id
+having avg(score) > (
+    select avg(score) from enrollments
 );
-
-select *from employees;
-
-update employees
-set salary=salary*1.1 where department='IT' and salary<18000000;
-
-update employees
-set bonus=5000000 where bonus is null;
-
-select *from employees
-where department='IT' or department='HR' and join_year>2020
-    and bonus+salary>15000000;
-
-select *from employees
-order by bonus+salary desc
-    limit 3;
-
-select *from employees
-where full_name like 'Nguyễn%' or full_name like '%Hân';
-
-select department, count(*) filter (where bonus is null) as member from employees
-group by department
-having count(*) filter (where bonus is null)>0;
-
-select *from employees
-where join_year between 2019 and 2022;
 
