@@ -1,28 +1,50 @@
-select s.full_name as "Tên sinh viên",c.course_name as "Môn học",
-       e.score as "Điểm" from enrollments e
-inner join students s on s.student_id = e.student_id
-inner join courses c on e.course_id = c.course_id;
+--Part2--
+create index idx_email on customers(email);
 
-select s.full_name as "Tên sinh viên",avg(score) as "Điểm trung bình",
-       max(score) as "Điểm cao nhất",
-       min(score) as "Điểm thấp nhất" from enrollments e
-inner join students s on s.student_id = e.student_id
-inner join courses c on e.course_id = c.course_id
-group by e.student_id,s.full_name;
+create index idx_city on customers using hash(city);
 
-select c.course_name, avg(score) from courses c
-inner join enrollments e on c.course_id = e.course_id
-group by c.course_name
-having avg(score) > 7.5;
+create index idx_category on products using gin(category);
 
-select full_name,course_name,credit,score from enrollments
-inner join students on enrollments.student_id = students.student_id
-inner join courses on enrollments.course_id = courses.course_id;
+create index idx_price on products using gist(price);
 
-select full_name from students
-inner join enrollments on students.student_id = enrollments.student_id
-group by full_name, enrollments.student_id
-having avg(score) > (
-    select avg(score) from enrollments
-);
+--Part3--
+explain analyze select *from customers
+                where email is not null;
+
+explain analyse select *from products
+                where 'Electronics'=any(category);
+
+explain analyze select *from products
+                where price between 500 and 1000;
+
+--Part4--
+create index idx_orderdate on orders(order_date);
+
+cluster orders using idx_orderdate;
+
+--Part5--
+create view v1 as
+select full_name from customers
+inner join orders on customers.customer_id = orders.customer_id
+inner join products on orders.product_id = products.product_id
+group by orders.customer_id, full_name
+order by sum(quantity*price) desc limit 3;
+
+select * from v1;
+
+create view v2 as
+select product_name, sum(quantity*price) as total_revenue from products
+inner join orders on products.product_id = orders.product_id
+group by product_name;
+
+select * from v2;
+
+--Part6--
+CREATE VIEW v_customer_city AS
+SELECT customer_id, full_name, city FROM customers
+where city='Hà Nội' WITH CHECK OPTION;
+
+update v_customer_city
+set city='Beijing' where customer_id=1;
+
 
