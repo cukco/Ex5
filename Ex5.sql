@@ -1,30 +1,31 @@
-create or replace procedure update_employee_status(
-    p_emp_id INT,
-    out p_status TEXT
-) language plpgsql
-as $$
-    declare
-        v_salary numeric(10,2);
+create or replace function f_log()
+returns trigger as $$
     begin
-        select salary into v_salary from employees
-        where id=p_emp_id;
+        if(tg_op='INSERT') then
+            insert into customers_log(customer_id, operation, new_data, changed_by) VALUES
+            (new.id,tg_op,to_jsonb(new),current_user);
+            return new;
+        elsif(tg_op='DELETE') then
+            insert into customers_log(customer_id, operation, old_data, changed_by) VALUES
+            (old.id,tg_op,to_jsonb(old),current_user);
+            return old;
+        elsif(tg_op='UPDATE') then
+            insert into customers_log(customer_id, operation,old_data, new_data, changed_by) VALUES
+            (new.id,tg_op,to_jsonb(old),to_jsonb(new),current_user);
 
-        if v_salary is null then
-            raise exception 'Employee not found';
+            return new;
         end if;
-
-        if v_salary < 5000 then
-            p_status:='Junior';
-        elsif v_salary between 5000 and 10000 then
-            p_status:='Mid-level';
-        else
-            p_status:='Senior';
-        end if;
-    exception
-        when others then
-            raise notice 'Xảy ra lỗi: %',SQLERRM;
-            rollback;
+        return null;
     end;
-$$;
+$$ language plpgsql;
 
-call update_employee_status(9,null);
+create trigger t_log
+    after update or delete or insert on customers
+    for each row
+    execute function f_log();
+
+insert into customers(name, email, phone, address) values
+    ('Đinh Văn Việt','vietxxyy@gmail.com','08888888','Hà Nội');
+
+delete from customers
+where id=1;
