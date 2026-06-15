@@ -1,31 +1,18 @@
-create or replace function f_log()
+create or replace function f_check()
 returns trigger as $$
+    declare
     begin
-        if(tg_op='INSERT') then
-            insert into customers_log(customer_id, operation, new_data, changed_by) VALUES
-            (new.id,tg_op,to_jsonb(new),current_user);
-            return new;
-        elsif(tg_op='DELETE') then
-            insert into customers_log(customer_id, operation, old_data, changed_by) VALUES
-            (old.id,tg_op,to_jsonb(old),current_user);
-            return old;
-        elsif(tg_op='UPDATE') then
-            insert into customers_log(customer_id, operation,old_data, new_data, changed_by) VALUES
-            (new.id,tg_op,to_jsonb(old),to_jsonb(new),current_user);
+        insert into employee_log(emp_name, action_time) values
+        (new.name,current_timestamp);
 
-            return new;
-        end if;
-        return null;
+    return new;
     end;
 $$ language plpgsql;
 
-create trigger t_log
-    after update or delete or insert on customers
+create trigger t_check
+    after update on employees
     for each row
-    execute function f_log();
+    execute function f_check();
 
-insert into customers(name, email, phone, address) values
-    ('Đinh Văn Việt','vietxxyy@gmail.com','08888888','Hà Nội');
-
-delete from customers
-where id=1;
+update employees
+set name='Nguyễn Công Hưởng' where emp_id=2;
